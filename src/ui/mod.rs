@@ -10,41 +10,49 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Tabs},
-    Frame, Terminal,
+    Frame,
+    Terminal,
 };
 use std::{
-    fs, io,
+    fs,
+    io,
     path::{Path, PathBuf},
     time::Duration,
 };
 
 pub struct App {
-    pub should_quit: bool,
+    pub should_quit:  bool,
     pub selected_tab: usize,
-    pub tabs: Vec<&'static str>,
-    pub logs: Vec<String>,
-    current_dir: PathBuf,
-    files: Vec<PathBuf>,
-    file_list_state: ListState,
-    file_content: Option<String>,
-    analysis_result: Option<AnalysisResult>,
-    errors: Vec<Diagnostic>,
-    errors_state: ListState,
-    editor_scroll: u16,
+    pub tabs:         Vec<&'static str>,
+    pub logs:         Vec<String>,
+    current_dir:      PathBuf,
+    files:            Vec<PathBuf>,
+    file_list_state:  ListState,
+    file_content:     Option<String>,
+    analysis_result:  Option<AnalysisResult>,
+    errors:           Vec<Diagnostic>,
+    errors_state:     ListState,
+    editor_scroll:    u16,
 }
 
 impl Default for App {
     fn default() -> Self {
+
         Self::new()
     }
 }
 
 impl App {
     pub fn new() -> Self {
+
         let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+
         let files = list_files(&current_dir).unwrap_or_default();
+
         let mut file_list_state = ListState::default();
+
         if !files.is_empty() {
+
             file_list_state.select(Some(0));
         }
 
@@ -65,28 +73,40 @@ impl App {
     }
 
     pub fn run(&mut self) -> io::Result<()> {
+
         // Setup terminal
         enable_raw_mode()?;
+
         let mut stdout = io::stdout();
+
         execute!(stdout, EnterAlternateScreen)?;
+
         let backend = CrosstermBackend::new(stdout);
+
         let mut terminal = Terminal::new(backend)?;
 
         // Main event loop
         while !self.should_quit {
+
             self.draw(&mut terminal)?;
+
             self.handle_events()?;
         }
 
         // Cleanup terminal
         disable_raw_mode()?;
+
         execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+
         terminal.show_cursor()?;
+
         Ok(())
     }
 
     fn draw(&mut self, terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()> {
+
         terminal.draw(|f| {
+
             let size = f.size();
 
             // Main layout with 3 vertical chunks: header, content, status
@@ -107,7 +127,9 @@ impl App {
                 .tabs
                 .iter()
                 .map(|t| {
+
                     let (first, rest) = t.split_at(1);
+
                     Line::from(vec![
                         Span::styled(
                             first,
@@ -161,10 +183,12 @@ impl App {
 
             f.render_widget(status_bar, chunks[2]);
         })?;
+
         Ok(())
     }
 
     fn draw_files_tab(&mut self, f: &mut Frame<'_>, area: Rect) {
+
         // Split the area into list and status bar
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -176,7 +200,9 @@ impl App {
             .files
             .iter()
             .map(|path| {
+
                 let is_dir = path.is_dir();
+
                 let display_name = path
                     .file_name()
                     .and_then(|n| n.to_str())
@@ -184,8 +210,10 @@ impl App {
 
                 // Use different icons for directories and files
                 let (icon, style) = if is_dir {
+
                     ("📁 ", Style::default().fg(Color::Blue))
                 } else {
+
                     ("📄 ", Style::default().fg(Color::White))
                 };
 
@@ -217,7 +245,9 @@ impl App {
 
         // Status bar with current path and help
         let status = format!("{} items", self.files.len());
+
         let help = "↑/↓: Navigate | Enter: Open | R: Refresh | Q: Quit";
+
         let status_bar = Line::from(vec![
             Span::styled(status, Style::default().fg(Color::Yellow)),
             Span::styled(" | ", Style::default().fg(Color::DarkGray)),
@@ -231,6 +261,7 @@ impl App {
     }
 
     fn draw_editor_tab(&self, f: &mut Frame<'_>, area: Rect) {
+
         // Split into line numbers and content areas
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -245,6 +276,7 @@ impl App {
 
         // Create line numbers
         let line_count = content.lines().count().max(1);
+
         let line_numbers = (1..=line_count)
             .map(|i| format!("{:4} ", i))
             .collect::<Vec<_>>()
@@ -277,11 +309,13 @@ impl App {
     }
 
     fn draw_types_tab(&self, f: &mut Frame<'_>, area: Rect) {
+
         let block = Block::default()
             .borders(Borders::ALL)
             .title("Type Information");
 
         let content = if let Some(res) = &self.analysis_result {
+
             let mut lines = vec![
                 Line::from(Span::styled(
                     "Analysis Result",
@@ -301,10 +335,14 @@ impl App {
                         .add_modifier(Modifier::BOLD),
                 )),
             ];
+
             if res.diagnostics.is_empty() {
+
                 lines.push(Line::from("(none)"));
             } else {
+
                 for d in &res.diagnostics {
+
                     lines.push(Line::from(format!(
                         "{}:{}:{}: {} {}",
                         d.path,
@@ -315,24 +353,34 @@ impl App {
                     )));
                 }
             }
+
             Text::from(lines)
         } else {
-            Text::from("No analysis yet. Open a .py file (Enter) or press 'a' on a selection in Files tab.")
+
+            Text::from(
+                "No analysis yet. Open a .py file (Enter) or press 'a' on a selection in Files \
+                 tab.",
+            )
         };
 
         let paragraph = Paragraph::new(content).block(block);
+
         f.render_widget(paragraph, area);
     }
 
     fn draw_errors_tab(&mut self, f: &mut Frame<'_>, area: Rect) {
+
         let block = Block::default().borders(Borders::ALL).title("Errors");
 
         let items: Vec<ListItem> = if self.errors.is_empty() {
+
             vec![ListItem::new("No diagnostics")]
         } else {
+
             self.errors
                 .iter()
                 .map(|d| {
+
                     let text = format!(
                         "{}:{}:{}: {} {}",
                         d.path,
@@ -341,6 +389,7 @@ impl App {
                         d.severity,
                         d.message
                     );
+
                     ListItem::new(text)
                 })
                 .collect()
@@ -359,6 +408,7 @@ impl App {
     }
 
     fn draw_logs_tab(&self, f: &mut Frame<'_>, area: Rect) {
+
         let items: Vec<ListItem> = self
             .logs
             .iter()
@@ -371,9 +421,13 @@ impl App {
     }
 
     fn handle_events(&mut self) -> io::Result<bool> {
+
         if event::poll(Duration::from_millis(100))? {
+
             if let Event::Key(key) = event::read()? {
+
                 if key.kind == KeyEventKind::Press {
+
                     match key.code {
                         // Quit application
                         KeyCode::Char('q') => return Ok(true),
@@ -386,12 +440,16 @@ impl App {
 
                         // Navigation between tabs
                         KeyCode::Right | KeyCode::Char('l') => {
+
                             self.selected_tab = (self.selected_tab + 1) % self.tabs.len();
                         },
                         KeyCode::Left | KeyCode::Char('h') => {
+
                             self.selected_tab = if self.selected_tab > 0 {
+
                                 self.selected_tab - 1
                             } else {
+
                                 self.tabs.len() - 1
                             };
                         },
@@ -399,65 +457,88 @@ impl App {
                         // File navigation (Files tab only)
                         KeyCode::Down | KeyCode::Char('j') if self.selected_tab == 0 => {
                             if let Some(selected) = self.file_list_state.selected() {
+
                                 if selected < self.files.len().saturating_sub(1) {
+
                                     self.file_list_state.select(Some(selected + 1));
                                 }
                             } else if !self.files.is_empty() {
+
                                 self.file_list_state.select(Some(0));
                             }
                         },
                         KeyCode::Up | KeyCode::Char('k') if self.selected_tab == 0 => {
+
                             if let Some(selected) = self.file_list_state.selected() {
+
                                 if selected > 0 {
+
                                     self.file_list_state.select(Some(selected - 1));
                                 }
                             } else if !self.files.is_empty() {
+
                                 self.file_list_state.select(Some(0));
                             }
                         },
                         KeyCode::Home if self.selected_tab == 0 => {
                             if !self.files.is_empty() {
+
                                 self.file_list_state.select(Some(0));
                             }
                         },
                         KeyCode::End if self.selected_tab == 0 => {
                             if !self.files.is_empty() {
+
                                 self.file_list_state.select(Some(self.files.len() - 1));
                             }
                         },
                         KeyCode::PageUp if self.selected_tab == 0 => {
+
                             if let Some(selected) = self.file_list_state.selected() {
+
                                 let page_size = 10; // Number of items to jump
                                 let new_selection = selected.saturating_sub(page_size);
+
                                 self.file_list_state.select(Some(new_selection));
                             }
                         },
                         KeyCode::PageDown if self.selected_tab == 0 => {
+
                             if let Some(selected) = self.file_list_state.selected() {
+
                                 let page_size = 10; // Number of items to jump
                                 let new_selection =
                                     (selected + page_size).min(self.files.len().saturating_sub(1));
+
                                 self.file_list_state.select(Some(new_selection));
                             }
                         },
 
                         // File operations (Files tab)
                         KeyCode::Enter | KeyCode::Char(' ') if self.selected_tab == 0 => {
+
                             if let Some(selected) = self.file_list_state.selected() {
+
                                 if let Some(path) = self.files.get(selected) {
+
                                     let path_buf = path.clone();
+
                                     if path_buf.is_file() {
+
                                         match self.open_file(&path_buf) {
                                             Ok(_) => {
+
                                                 self.selected_tab = 4; // Switch to editor tab
                                                 self.logs.push(format!(
                                                     "Opened file: {}",
                                                     path_buf.display()
                                                 ));
+
                                                 // If it's a Python file, analyze it immediately
                                                 if path_buf.extension().and_then(|e| e.to_str())
                                                     == Some("py")
                                                 {
+
                                                     match self.run_analysis(&path_buf) {
                                                         Ok(_) => self
                                                             .logs
@@ -470,17 +551,23 @@ impl App {
                                                 }
                                             },
                                             Err(e) => {
+
                                                 self.logs
                                                     .push(format!("Failed to open file: {}", e));
                                             },
                                         }
                                     } else if path_buf.is_dir() {
+
                                         self.current_dir = path_buf.clone();
+
                                         if let Err(e) = self.refresh_files() {
+
                                             self.logs
                                                 .push(format!("Failed to enter directory: {}", e));
                                         } else {
+
                                             self.file_list_state.select(Some(0));
+
                                             self.logs.push(format!(
                                                 "Entered directory: {}",
                                                 path_buf.display()
@@ -492,36 +579,52 @@ impl App {
                         },
                         // Errors tab navigation and open-on-enter
                         KeyCode::Up if self.selected_tab == 3 => {
+
                             if let Some(i) = self.errors_state.selected() {
+
                                 if i > 0 {
+
                                     self.errors_state.select(Some(i - 1));
                                 }
                             } else if !self.errors.is_empty() {
+
                                 self.errors_state.select(Some(0));
                             }
                         },
                         KeyCode::Down if self.selected_tab == 3 => {
+
                             if let Some(i) = self.errors_state.selected() {
+
                                 if i + 1 < self.errors.len() {
+
                                     self.errors_state.select(Some(i + 1));
                                 }
                             } else if !self.errors.is_empty() {
+
                                 self.errors_state.select(Some(0));
                             }
                         },
                         KeyCode::Enter if self.selected_tab == 3 => {
+
                             if let Some(i) = self.errors_state.selected() {
+
                                 if let Some(d) = self.errors.get(i).cloned() {
+
                                     let p = PathBuf::from(&d.path);
+
                                     if p.is_file() {
+
                                         if let Err(e) = self.open_file(&p) {
+
                                             self.logs.push(format!(
                                                 "Failed to open file from error: {}",
                                                 e
                                             ));
                                         } else {
+
                                             // Jump editor to the diagnostic line
                                             self.editor_scroll = d.line as u16;
+
                                             self.selected_tab = 4; // Editor
                                             self.logs.push(format!(
                                                 "Opened from error: {}",
@@ -534,31 +637,44 @@ impl App {
                         },
                         // Editor scrolling
                         KeyCode::Up if self.selected_tab == 4 => {
+
                             self.editor_scroll = self.editor_scroll.saturating_sub(1);
                         },
                         KeyCode::Down if self.selected_tab == 4 => {
-                            // Increment scroll; bounds are not strictly enforced without knowing content height
+
+                            // Increment scroll; bounds are not strictly enforced without knowing
+                            // content height
                             self.editor_scroll = self.editor_scroll.saturating_add(1);
                         },
                         // Analyze currently selected file in Files tab
                         KeyCode::Char('a') => {
+
                             if let Some(selected) = self.file_list_state.selected() {
+
                                 if let Some(path) = self.files.get(selected) {
+
                                     let p = path.clone();
+
                                     if p.is_file()
                                         && p.extension().and_then(|e| e.to_str()) == Some("py")
                                     {
+
                                         match self.run_analysis(&p) {
                                             Ok(_) => {
+
                                                 self.logs
                                                     .push(format!("Analyzed: {}", p.display()));
-                                                self.selected_tab = 1; // Switch to Types tab
+
+                                                self.selected_tab = 1; // Switch
+                                                                       // to Types
+                                                                       // tab
                                             },
                                             Err(e) => {
                                                 self.logs.push(format!("Analysis failed: {}", e))
                                             },
                                         }
                                     } else {
+
                                         self.logs.push(
                                             "Select a Python (.py) file to analyze".to_string(),
                                         );
@@ -569,19 +685,26 @@ impl App {
 
                         // Parent directory navigation
                         KeyCode::Backspace | KeyCode::Char('\\') => {
+
                             if let Some(parent) = self.current_dir.parent() {
+
                                 self.current_dir = parent.to_path_buf();
+
                                 if let Err(e) = self.refresh_files() {
+
                                     self.logs
                                         .push(format!("Failed to go to parent directory: {}", e));
                                 } else {
+
                                     self.file_list_state.select(Some(0));
+
                                     self.logs.push(format!(
                                         "Moved to parent directory: {}",
                                         self.current_dir.display()
                                     ));
                                 }
                             } else {
+
                                 self.logs.push("Already at root directory".to_string());
                             }
                         },
@@ -591,31 +714,42 @@ impl App {
                 }
             }
         }
+
         Ok(false)
     }
 
     fn refresh_files(&mut self) -> io::Result<()> {
+
         self.files = list_files(&self.current_dir)?;
+
         Ok(())
     }
 
     fn open_file(&mut self, path: &Path) -> io::Result<()> {
+
         self.file_content = Some(fs::read_to_string(path)?);
+
         Ok(())
     }
 
     fn run_analysis(&mut self, path: &Path) -> Result<(), String> {
+
         match Analyzer::analyze_python_file(path) {
             Ok(res) => {
+
                 self.analysis_result = Some(res);
+
                 self.errors = self
                     .analysis_result
                     .as_ref()
                     .map(|r| r.diagnostics.clone())
                     .unwrap_or_default();
+
                 if !self.errors.is_empty() && self.errors_state.selected().is_none() {
+
                     self.errors_state.select(Some(0));
                 }
+
                 Ok(())
             },
             Err(e) => Err(e.to_string()),
@@ -624,14 +758,19 @@ impl App {
 }
 
 fn list_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
+
     let mut entries = fs::read_dir(dir)?
         .filter_map(|entry| {
+
             let entry = entry.ok()?;
+
             let path = entry.path();
+
             let file_name = path.file_name()?.to_string_lossy();
 
             // Skip hidden files and directories
             if file_name.starts_with('.') {
+
                 return None;
             }
 
@@ -641,6 +780,7 @@ fn list_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
 
     // Sort directories first, then by name
     entries.sort_by(|(a_path, a_is_dir), (b_path, b_is_dir)| {
+
         // Directories first
         match (a_is_dir, b_is_dir) {
             (true, false) => std::cmp::Ordering::Less,

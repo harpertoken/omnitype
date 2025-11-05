@@ -6,9 +6,8 @@ newline_style = "Auto"
 use_small_heuristics = "Max"
 
 # Imports
-imports_granularity = "Module"
+imports_granularity = "Crate"
 imports_layout = "HorizontalVertical"
-merge_imports = true
 reorder_imports = true
 
 # Control Flow

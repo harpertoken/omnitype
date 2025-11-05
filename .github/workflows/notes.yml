@@ -37,5 +37,3 @@ jobs:
         with:
           name: release-notes
           path: release_*.md
-
-

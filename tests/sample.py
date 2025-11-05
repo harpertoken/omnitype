@@ -21,14 +21,14 @@ def process_list(items: Iterable[Any]) -> list[Any]:
 
 class Calculator:
     """A simple calculator class."""
-    
+
     def __init__(self, initial_value=0):
         self.value = initial_value
-    
+
     def add(self, x):
         self.value += x
         return self.value
-    
+
     def multiply(self, x):
         self.value *= x
         return self.value

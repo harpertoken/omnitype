@@ -1,26 +1,35 @@
 //! Type system definitions for omnitype.
 
-use std::cmp::Ordering;
-use std::collections::{BTreeSet, HashMap};
-use std::fmt;
-use std::hash::{Hash, Hasher};
+#![allow(clippy::empty_line_after_doc_comments)]
+#![allow(clippy::empty_line_after_outer_attr)]
+
+use std::{
+    cmp::Ordering,
+    collections::{BTreeSet, HashMap},
+    fmt,
+    hash::{Hash, Hasher},
+};
 
 use serde::{Deserialize, Serialize};
 
 /// A type variable used during type inference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+
 pub struct TypeVar(pub u32);
 
 impl fmt::Display for TypeVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
         write!(f, "T{}", self.0)
     }
 }
 
 /// Represents a type in the omnitype system.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+
 pub enum Type {
     /// The unknown type (used during inference)
+    #[default]
     Unknown,
 
     /// The `None` type
@@ -59,7 +68,7 @@ pub enum Type {
     /// Function type with parameter and return types
     Function {
         /// List of parameter types
-        params: Vec<Type>,
+        params:  Vec<Type>,
         /// Return type
         returns: Box<Type>,
     },
@@ -76,7 +85,7 @@ pub enum Type {
     /// Generic type with type parameters
     Generic {
         /// Name of the generic type
-        name: String,
+        name:   String,
         /// Type parameters
         params: Vec<Type>,
     },
@@ -84,24 +93,32 @@ pub enum Type {
 
 impl Hash for Type {
     fn hash<H: Hasher>(&self, state: &mut H) {
+
         std::mem::discriminant(self).hash(state);
+
         match self {
             Type::List(inner) => inner.hash(state),
             Type::Dict(k, v) => {
+
                 k.hash(state);
+
                 v.hash(state);
             },
             Type::Tuple(types) => types.hash(state),
             Type::Set(inner) => inner.hash(state),
             Type::Function { params, returns } => {
+
                 params.hash(state);
+
                 returns.hash(state);
             },
             Type::Union(types) => types.hash(state),
             Type::Var(var) => var.hash(state),
             Type::Named(name) => name.hash(state),
             Type::Generic { name, params } => {
+
                 name.hash(state);
+
                 params.hash(state);
             },
             _ => (),
@@ -111,6 +128,7 @@ impl Hash for Type {
 
 impl PartialEq for Type {
     fn eq(&self, other: &Self) -> bool {
+
         match (self, other) {
             (Type::List(a), Type::List(b)) => a == b,
             (Type::Dict(ak, av), Type::Dict(bk, bv)) => ak == bk && av == bv,
@@ -136,12 +154,14 @@ impl Eq for Type {}
 
 impl PartialOrd for Type {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+
         Some(self.cmp(other))
     }
 }
 
 impl Ord for Type {
     fn cmp(&self, other: &Self) -> Ordering {
+
         match (self, other) {
             (Type::Unknown, Type::Unknown) => Ordering::Equal,
             (Type::None, Type::None) => Ordering::Equal,
@@ -176,6 +196,7 @@ impl Ord for Type {
                 ord => ord,
             },
             (a, b) => {
+
                 // Compare discriminants by matching all possible variants
                 match (a, b) {
                     (Type::Unknown, _) => Ordering::Less,
@@ -218,24 +239,31 @@ impl Ord for Type {
 }
 
 impl Type {
-    /// Creates a normalized union type by sorting and deduplicating the input types.
-    /// This ensures that the same set of types always produces the same union,
-    /// regardless of the order of input types.
-    pub fn union_of(types: Vec<Type>) -> Type {
+    /// Creates a normalized union type by sorting and deduplicating the input
+    /// types. This ensures that the same set of types always produces the
+    /// same union, regardless of the order of input types.
+
+    pub fn union_of(types: Vec<Type>) -> crate::error::Result<Type> {
+
         if types.is_empty() {
-            return Type::Unknown;
+
+            return Ok(Type::Unknown);
         }
 
         // Flatten nested unions and collect unique types
         let mut unique_types = BTreeSet::new();
+
         for ty in types {
+
             match ty {
                 Type::Union(nested_types) => {
                     for nested_ty in nested_types {
+
                         unique_types.insert(nested_ty);
                     }
                 },
                 _ => {
+
                     unique_types.insert(ty);
                 },
             }
@@ -243,22 +271,21 @@ impl Type {
 
         // If there's only one unique type, return it directly
         if unique_types.len() == 1 {
-            return unique_types.into_iter().next().unwrap();
+
+            return unique_types.into_iter().next().ok_or_else(|| {
+
+                crate::error::Error::type_error("No unique type found".to_string())
+            });
         }
 
         // Convert back to a sorted vector
-        Type::Union(unique_types.into_iter().collect())
-    }
-}
-
-impl Default for Type {
-    fn default() -> Self {
-        Self::Unknown
+        Ok(Type::Union(unique_types.into_iter().collect()))
     }
 }
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
         match self {
             Type::Unknown => write!(f, "Unknown"),
             Type::None => write!(f, "None"),
@@ -271,38 +298,46 @@ impl fmt::Display for Type {
             Type::List(inner) => write!(f, "List[{}]", inner),
             Type::Dict(k, v) => write!(f, "Dict[{}, {}]", k, v),
             Type::Tuple(items) => {
+
                 let items_str = items
                     .iter()
                     .map(|t| t.to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
+
                 write!(f, "Tuple[{}]", items_str)
             },
             Type::Set(inner) => write!(f, "Set[{}]", inner),
             Type::Function { params, returns } => {
+
                 let params_str = params
                     .iter()
                     .map(|t| t.to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
+
                 write!(f, "Callable[[{}], {}]", params_str, returns)
             },
             Type::Union(types) => {
+
                 let types_str = types
                     .iter()
                     .map(|t| t.to_string())
                     .collect::<Vec<_>>()
                     .join(" | ");
+
                 write!(f, "{}", types_str)
             },
             Type::Var(var) => write!(f, "{}", var),
             Type::Named(name) => write!(f, "{}", name),
             Type::Generic { name, params } => {
+
                 let params_str = params
                     .iter()
                     .map(|t| t.to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
+
                 write!(f, "{}[{}]", name, params_str)
             },
         }
@@ -311,52 +346,71 @@ impl fmt::Display for Type {
 
 /// Type environment that maps variable names to their types.
 #[derive(Debug, Default, Clone)]
+#[allow(clippy::empty_line_after_outer_attr)]
+
 pub struct TypeEnv {
     bindings: HashMap<String, Type>,
-    parent: Option<Box<TypeEnv>>,
+    parent:   Option<Box<TypeEnv>>,
 }
 
 impl TypeEnv {
     /// Creates a new empty type environment.
+
     pub fn new() -> Self {
+
         Self { bindings: HashMap::new(), parent: None }
     }
 
     /// Creates a new nested type environment.
+
     pub fn nested(env: TypeEnv) -> Self {
+
         Self { bindings: HashMap::new(), parent: Some(Box::new(env)) }
     }
 
     /// Looks up a variable in the environment.
+
     pub fn lookup(&self, name: &str) -> Option<&Type> {
+
         self.bindings
             .get(name)
             .or_else(|| self.parent.as_ref().and_then(|parent| parent.lookup(name)))
     }
 
     /// Binds a variable to a type in the current scope.
+
     pub fn bind(&mut self, name: String, ty: Type) -> Option<Type> {
+
         self.bindings.insert(name, ty)
     }
 
     /// Returns the parent environment, if any.
+
     pub fn parent(&self) -> Option<&TypeEnv> {
+
         self.parent.as_deref()
     }
 }
 
 #[cfg(test)]
+
 mod tests {
+
     use super::*;
 
     #[test]
+
     fn test_type_display() {
+
         assert_eq!(Type::Int.to_string(), "int");
+
         assert_eq!(Type::List(Box::new(Type::Int)).to_string(), "List[int]");
+
         assert_eq!(
             Type::Dict(Box::new(Type::Str), Box::new(Type::Int)).to_string(),
             "Dict[str, int]"
         );
+
         assert_eq!(
             Type::Function { params: vec![Type::Int, Type::Str], returns: Box::new(Type::Bool) }
                 .to_string(),
@@ -365,17 +419,23 @@ mod tests {
     }
 
     #[test]
+
     fn test_type_env() {
+
         let mut env = TypeEnv::new();
+
         env.bind("x".to_string(), Type::Int);
 
         assert_eq!(env.lookup("x"), Some(&Type::Int));
+
         assert_eq!(env.lookup("y"), None);
 
         let mut inner_env = TypeEnv::nested(env);
+
         inner_env.bind("y".to_string(), Type::Str);
 
         assert_eq!(inner_env.lookup("x"), Some(&Type::Int));
+
         assert_eq!(inner_env.lookup("y"), Some(&Type::Str));
     }
 }

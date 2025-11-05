@@ -32,7 +32,7 @@ if [ "$TAGS" -eq 0 ]; then
 else
     LATEST_TAG=$(git describe --tags --abbrev=0)
     echo "Latest tag: $LATEST_TAG"
-    
+
     echo ""
     echo "Generated changelog:"
     echo "## Changes in v$CURRENT_VERSION"

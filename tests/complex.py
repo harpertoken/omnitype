@@ -25,11 +25,11 @@ def find_user(users: List[Dict[str, Union[str, int]]], user_id: int) -> Optional
 
 class DataProcessor:
     """A class for processing various data types."""
-    
+
     def __init__(self):
         self.processed_count = 0
         self.cache: Dict[str, Union[str, int, List]] = {}
-    
+
     def process_json(self, json_str: str) -> Dict:
         """Parse and process JSON data."""
         try:
@@ -38,7 +38,7 @@ class DataProcessor:
             return data
         except json.JSONDecodeError:
             return {}
-    
+
     def cache_result(self, key: str, value: Union[str, int, List]) -> None:
         """Cache a processing result."""
         self.cache[key] = value
@@ -62,24 +62,24 @@ def test_find_user():
         {"id": 2, "name": "Bob", "age": 25},
         {"id": 3, "name": "Charlie", "age": 35}
     ]
-    
+
     user = find_user(users, 2)
     assert user is not None
     assert user["name"] == "Bob"
-    
+
     missing_user = find_user(users, 999)
     assert missing_user is None
 
 def test_data_processor():
     """Test the DataProcessor class."""
     processor = DataProcessor()
-    
+
     json_data = '{"key": "value", "number": 42}'
     result = processor.process_json(json_data)
     assert result["key"] == "value"
     assert result["number"] == 42
     assert processor.processed_count == 1
-    
+
     processor.cache_result("test", [1, 2, 3])
     assert "test" in processor.cache
 

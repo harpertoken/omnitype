@@ -1,8 +1,9 @@
 use std::process::Command;
 
 fn run_check_test(file_path: &str, expected_counts: &str) {
+
     let output = Command::new("cargo")
-        .args(&["run", "--", "check", file_path])
+        .args(["run", "--", "check", file_path])
         .output()
         .expect("Failed to run omnitype check");
 
@@ -19,11 +20,15 @@ fn run_check_test(file_path: &str, expected_counts: &str) {
 }
 
 #[test]
+
 fn test_check_sample_py() {
+
     run_check_test("tests/sample.py", "functions=8, classes=1");
 }
 
 #[test]
+
 fn test_check_classes_py() {
+
     run_check_test("tests/classes.py", "functions=7, classes=1");
 }

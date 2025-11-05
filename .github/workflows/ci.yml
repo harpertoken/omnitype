@@ -25,12 +25,12 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      
+
       - name: Cache cargo
         uses: actions/cache@v3
         with:
@@ -39,27 +39,27 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Check formatting
         run: cargo fmt -- --check
-      
+
       - name: Run Clippy
         run: cargo clippy -- -D warnings
-      
+
       - name: Install nightly toolchain for cargo-udeps
         uses: dtolnay/rust-toolchain@nightly
-      
+
       - name: Install cargo-udeps
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-udeps
-      
+
       - name: Check for unused dependencies
         run: cargo +nightly udeps --all-targets
-      
+
       - name: Install cargo-audit
         run: cargo install cargo-audit
-      
+
       - name: Audit dependencies
         run: cargo audit --ignore RUSTSEC-2024-0436
 
@@ -74,21 +74,21 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         rust: [stable]
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-      
+
       - name: Install cargo-tarpaulin
         if: matrix.os == 'ubuntu-latest'
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-tarpaulin
-      
+
       - name: Cache cargo
         uses: actions/cache@v3
         with:
@@ -97,17 +97,17 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Run tests
         run: cargo test --workspace -- --test-threads=1 --nocapture
-      
+
       - name: Generate test coverage (Linux only)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install -y libssl-dev pkg-config
           cargo tarpaulin --out Xml --output-dir target/tarpaulin
         continue-on-error: true
-      
+
       - name: Upload coverage to Codecov (Linux only)
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v5
@@ -125,12 +125,12 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Install cargo-audit
         run: cargo install cargo-audit
-      
+
       - name: Run cargo-audit
         run: cargo audit --deny warnings --ignore RUSTSEC-2024-0436
