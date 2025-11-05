@@ -10,12 +10,10 @@ use walkdir::WalkDir;
 /// Returns an iterator over all Python files in the given directory.
 
 pub fn find_python_files<P: AsRef<Path>>(path: P) -> impl Iterator<Item = PathBuf> {
-
     WalkDir::new(path)
         .into_iter()
         .filter_map(Result::ok)
         .filter(|entry| {
-
             let path = entry.path();
 
             path.is_file() && path.extension().is_some_and(|ext| ext == "py")
@@ -28,10 +26,8 @@ pub fn find_python_files<P: AsRef<Path>>(path: P) -> impl Iterator<Item = PathBu
 /// or has no file stem.
 
 pub fn path_to_module_name(path: &Path) -> Option<String> {
-
     // Check if the path ends with a separator (indicates a directory)
     if path.to_str()?.ends_with(std::path::MAIN_SEPARATOR) || path.to_str()?.ends_with('/') {
-
         return None;
     }
 
@@ -52,7 +48,6 @@ mod tests {
     #[test]
 
     fn test_find_python_files() {
-
         let temp_dir = tempdir().unwrap();
 
         let dir_path = temp_dir.path();
@@ -69,7 +64,6 @@ mod tests {
     #[test]
 
     fn test_path_to_module_name() {
-
         assert_eq!(
             path_to_module_name(Path::new("/path/to/module.py")),
             Some("module".to_string())

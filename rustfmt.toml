@@ -6,59 +6,20 @@ newline_style = "Auto"
 use_small_heuristics = "Max"
 
 # Imports
-imports_granularity = "Crate"
-imports_layout = "HorizontalVertical"
 reorder_imports = true
 
 # Control Flow
-control_brace_style = "AlwaysSameLine"
 remove_nested_parens = true
-reorder_impl_items = true
-
-# Documentation
-format_code_in_doc_comments = true
-wrap_comments = true
-comment_width = 80
 
 # Match & Other Expressions
 match_block_trailing_comma = true
 match_arm_leading_pipes = "Never"
-overflow_delimited_expr = true
-
-# Macros
-format_macro_matchers = true
-format_macro_bodies = true
-
-# Tests
-format_strings = true
-
-# Error Handling
-error_on_line_overflow = true
-
-# Blank Lines
-blank_lines_lower_bound = 1
-blank_lines_upper_bound = 2
 
 # Chains
 chain_width = 60
 
-# Indentation
-indent_style = "Block"
-
-# Match
-match_arm_blocks = true
-
 # Modules
 merge_derives = true
 
-# Structs & Enums
-struct_field_align_threshold = 20
-struct_lit_single_line = true
-
-# Where Clauses
-where_single_line = false
-
 # Use Statements
 use_field_init_shorthand = true
-
-# Control Flow

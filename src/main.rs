@@ -74,7 +74,6 @@ enum Commands {
 }
 
 fn setup_logging(level: &str) -> io::Result<()> {
-
     let log_level = match level.to_lowercase().as_str() {
         "trace" => LevelFilter::Trace,
         "debug" => LevelFilter::Debug,
@@ -93,7 +92,6 @@ fn setup_logging(level: &str) -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-
     let cli = Cli::parse();
 
     // Set up logging
@@ -101,7 +99,6 @@ fn main() -> io::Result<()> {
 
     // If no command is provided or TUI flag is set, run the TUI
     if cli.command.is_none() || cli.tui {
-
         let mut app = ui::App::new();
 
         return app.run();
@@ -109,16 +106,13 @@ fn main() -> io::Result<()> {
 
     // Handle command-line commands
     if let Some(command) = cli.command {
-
         match command {
             Commands::Check { path, format } => {
-
                 let path_exists = std::fs::metadata(&path)
                     .map(|m| m.is_file() || m.is_dir())
                     .unwrap_or(false);
 
                 if !path_exists {
-
                     eprintln!("Path not found: {:?}", path);
 
                     return Ok(());
@@ -127,21 +121,16 @@ fn main() -> io::Result<()> {
                 let mut results: Vec<AnalysisResult> = Vec::new();
 
                 if path.is_file() {
-
                     if path.extension().and_then(|e| e.to_str()) == Some("py") {
-
                         match Analyzer::analyze_python_file(&path) {
                             Ok(res) => results.push(res),
                             Err(e) => eprintln!("Failed to analyze {:?}: {}", path, e),
                         }
                     } else {
-
                         eprintln!("File is not a Python file: {:?}", path);
                     }
                 } else {
-
                     for file in find_python_files(&path) {
-
                         match Analyzer::analyze_python_file(&file) {
                             Ok(res) => results.push(res),
                             Err(e) => eprintln!("Failed to analyze {:?}: {}", file, e),
@@ -158,19 +147,15 @@ fn main() -> io::Result<()> {
                     },
                     _ => {
                         if results.is_empty() {
-
                             println!("No Python files found or all analyses failed.");
                         } else {
-
                             for r in &results {
-
                                 println!(
                                     "{}: functions={}, classes={}",
                                     r.path, r.function_count, r.class_count
                                 );
 
                                 for d in &r.diagnostics {
-
                                     println!(
                                         "  {}:{}:{}: {} {}",
                                         r.path,
@@ -188,28 +173,22 @@ fn main() -> io::Result<()> {
                 }
 
                 if total_diagnostics > 0 {
-
                     std::process::exit(1);
                 }
             },
             Commands::Fix { path, in_place } => {
-
                 let fixer = Fixer::new(TypeEnv::new(), in_place);
 
                 if let Err(e) = fixer.fix_path(&path) {
-
                     eprintln!("Fix failed: {}", e);
                 } else {
-
                     println!("Fix completed{}", if in_place { " (in-place)" } else { "" });
                 }
             },
             Commands::Trace { path, test } => {
-
                 use omnitype::tracer::RuntimeTracer;
 
                 fn setup_logging(level: &str) -> std::io::Result<()> {
-
                     // RUST_LOG takes precedence if set; otherwise fall back to CLI value.
                     let env = env_logger::Env::default().filter_or("RUST_LOG", level);
 
@@ -226,7 +205,6 @@ fn main() -> io::Result<()> {
 
                 match tracer.run(&path, test.as_deref()) {
                     Ok(()) => {
-
                         let trace = tracer.into_traces();
 
                         println!("Tracing completed successfully.");
@@ -234,14 +212,12 @@ fn main() -> io::Result<()> {
                         println!("Variables:");
 
                         for (name, types) in &trace.variables {
-
                             println!("  {}: {:?}", name, types);
                         }
 
                         println!("Functions:");
 
                         for (name, (args, returns)) in &trace.functions {
-
                             println!("  {}: args={:?}, returns={:?}", name, args, returns);
                         }
                     },

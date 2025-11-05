@@ -19,7 +19,6 @@ pub struct TypeVar(pub u32);
 
 impl fmt::Display for TypeVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-
         write!(f, "T{}", self.0)
     }
 }
@@ -68,7 +67,7 @@ pub enum Type {
     /// Function type with parameter and return types
     Function {
         /// List of parameter types
-        params:  Vec<Type>,
+        params: Vec<Type>,
         /// Return type
         returns: Box<Type>,
     },
@@ -85,7 +84,7 @@ pub enum Type {
     /// Generic type with type parameters
     Generic {
         /// Name of the generic type
-        name:   String,
+        name: String,
         /// Type parameters
         params: Vec<Type>,
     },
@@ -93,13 +92,11 @@ pub enum Type {
 
 impl Hash for Type {
     fn hash<H: Hasher>(&self, state: &mut H) {
-
         std::mem::discriminant(self).hash(state);
 
         match self {
             Type::List(inner) => inner.hash(state),
             Type::Dict(k, v) => {
-
                 k.hash(state);
 
                 v.hash(state);
@@ -107,7 +104,6 @@ impl Hash for Type {
             Type::Tuple(types) => types.hash(state),
             Type::Set(inner) => inner.hash(state),
             Type::Function { params, returns } => {
-
                 params.hash(state);
 
                 returns.hash(state);
@@ -116,7 +112,6 @@ impl Hash for Type {
             Type::Var(var) => var.hash(state),
             Type::Named(name) => name.hash(state),
             Type::Generic { name, params } => {
-
                 name.hash(state);
 
                 params.hash(state);
@@ -128,7 +123,6 @@ impl Hash for Type {
 
 impl PartialEq for Type {
     fn eq(&self, other: &Self) -> bool {
-
         match (self, other) {
             (Type::List(a), Type::List(b)) => a == b,
             (Type::Dict(ak, av), Type::Dict(bk, bv)) => ak == bk && av == bv,
@@ -154,14 +148,12 @@ impl Eq for Type {}
 
 impl PartialOrd for Type {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-
         Some(self.cmp(other))
     }
 }
 
 impl Ord for Type {
     fn cmp(&self, other: &Self) -> Ordering {
-
         match (self, other) {
             (Type::Unknown, Type::Unknown) => Ordering::Equal,
             (Type::None, Type::None) => Ordering::Equal,
@@ -196,7 +188,6 @@ impl Ord for Type {
                 ord => ord,
             },
             (a, b) => {
-
                 // Compare discriminants by matching all possible variants
                 match (a, b) {
                     (Type::Unknown, _) => Ordering::Less,
@@ -244,9 +235,7 @@ impl Type {
     /// same union, regardless of the order of input types.
 
     pub fn union_of(types: Vec<Type>) -> crate::error::Result<Type> {
-
         if types.is_empty() {
-
             return Ok(Type::Unknown);
         }
 
@@ -254,16 +243,13 @@ impl Type {
         let mut unique_types = BTreeSet::new();
 
         for ty in types {
-
             match ty {
                 Type::Union(nested_types) => {
                     for nested_ty in nested_types {
-
                         unique_types.insert(nested_ty);
                     }
                 },
                 _ => {
-
                     unique_types.insert(ty);
                 },
             }
@@ -271,9 +257,7 @@ impl Type {
 
         // If there's only one unique type, return it directly
         if unique_types.len() == 1 {
-
             return unique_types.into_iter().next().ok_or_else(|| {
-
                 crate::error::Error::type_error("No unique type found".to_string())
             });
         }
@@ -285,7 +269,6 @@ impl Type {
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-
         match self {
             Type::Unknown => write!(f, "Unknown"),
             Type::None => write!(f, "None"),
@@ -298,7 +281,6 @@ impl fmt::Display for Type {
             Type::List(inner) => write!(f, "List[{}]", inner),
             Type::Dict(k, v) => write!(f, "Dict[{}, {}]", k, v),
             Type::Tuple(items) => {
-
                 let items_str = items
                     .iter()
                     .map(|t| t.to_string())
@@ -309,7 +291,6 @@ impl fmt::Display for Type {
             },
             Type::Set(inner) => write!(f, "Set[{}]", inner),
             Type::Function { params, returns } => {
-
                 let params_str = params
                     .iter()
                     .map(|t| t.to_string())
@@ -319,7 +300,6 @@ impl fmt::Display for Type {
                 write!(f, "Callable[[{}], {}]", params_str, returns)
             },
             Type::Union(types) => {
-
                 let types_str = types
                     .iter()
                     .map(|t| t.to_string())
@@ -331,7 +311,6 @@ impl fmt::Display for Type {
             Type::Var(var) => write!(f, "{}", var),
             Type::Named(name) => write!(f, "{}", name),
             Type::Generic { name, params } => {
-
                 let params_str = params
                     .iter()
                     .map(|t| t.to_string())
@@ -350,28 +329,25 @@ impl fmt::Display for Type {
 
 pub struct TypeEnv {
     bindings: HashMap<String, Type>,
-    parent:   Option<Box<TypeEnv>>,
+    parent: Option<Box<TypeEnv>>,
 }
 
 impl TypeEnv {
     /// Creates a new empty type environment.
 
     pub fn new() -> Self {
-
         Self { bindings: HashMap::new(), parent: None }
     }
 
     /// Creates a new nested type environment.
 
     pub fn nested(env: TypeEnv) -> Self {
-
         Self { bindings: HashMap::new(), parent: Some(Box::new(env)) }
     }
 
     /// Looks up a variable in the environment.
 
     pub fn lookup(&self, name: &str) -> Option<&Type> {
-
         self.bindings
             .get(name)
             .or_else(|| self.parent.as_ref().and_then(|parent| parent.lookup(name)))
@@ -380,14 +356,12 @@ impl TypeEnv {
     /// Binds a variable to a type in the current scope.
 
     pub fn bind(&mut self, name: String, ty: Type) -> Option<Type> {
-
         self.bindings.insert(name, ty)
     }
 
     /// Returns the parent environment, if any.
 
     pub fn parent(&self) -> Option<&TypeEnv> {
-
         self.parent.as_deref()
     }
 }
@@ -401,7 +375,6 @@ mod tests {
     #[test]
 
     fn test_type_display() {
-
         assert_eq!(Type::Int.to_string(), "int");
 
         assert_eq!(Type::List(Box::new(Type::Int)).to_string(), "List[int]");
@@ -421,7 +394,6 @@ mod tests {
     #[test]
 
     fn test_type_env() {
-
         let mut env = TypeEnv::new();
 
         env.bind("x".to_string(), Type::Int);

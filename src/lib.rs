@@ -27,7 +27,6 @@ pub mod prelude {
 /// The main entry point for the omnitype application.
 
 pub fn run() -> crate::error::Result<()> {
-
     // Application initialization and execution will be implemented here
     Ok(())
 }

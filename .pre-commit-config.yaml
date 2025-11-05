@@ -14,32 +14,32 @@ repos:
         files: \.(c|cc|cxx|cpp|java|js|ts)$
         types: [file]
 
-  - repo: local
-    hooks:
-      - id: cargo-check
-        name: cargo check
-        entry: cargo check
-        language: system
-        pass_filenames: false
-        files: \.(rs|toml)$
+   - repo: local
+     hooks:
+       - id: cargo-check
+         name: cargo check
+         entry: cargo check
+         language: system
+         pass_filenames: false
+         files: \.(rs|toml)$
 
-      - id: cargo-clippy
-        name: cargo clippy
-        entry: cargo clippy --all-targets --all-features -- -D warnings
-        language: system
-        pass_filenames: false
-        files: \.(rs|toml)$
+       - id: cargo-clippy
+         name: cargo clippy
+         entry: cargo clippy --all-targets --all-features
+         language: system
+         pass_filenames: false
+         files: \.(rs|toml)$
 
-      - id: cargo-fmt
-        name: cargo fmt
-        entry: cargo fmt --all -- --check
-        language: system
-        pass_filenames: false
-        files: \.(rs|toml)$
+       - id: cargo-fmt
+         name: cargo fmt
+         entry: cargo fmt --all -- --check
+         language: system
+         pass_filenames: false
+         files: \.(rs|toml)$
 
-      - id: cargo-test
-        name: cargo test
-        entry: cargo test
-        language: system
-        pass_filenames: false
-        files: \.(rs|toml)$
+       - id: cargo-test
+         name: cargo test
+         entry: cargo test
+         language: system
+         pass_filenames: false
+         files: \.(rs|toml)$

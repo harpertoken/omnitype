@@ -23,23 +23,18 @@ impl Fixer {
     /// Creates a new fixer with the given type environment.
 
     pub fn new(type_env: TypeEnv, in_place: bool) -> Self {
-
         Self { type_env, in_place }
     }
 
     /// Fixes type annotations in the specified file or directory.
 
     pub fn fix_path<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-
         let path = path.as_ref();
 
         if path.is_file() {
-
             self.fix_file(path)?;
         } else if path.is_dir() {
-
             for file in find_python_files(path) {
-
                 self.fix_file(file)?;
             }
         }
@@ -50,11 +45,9 @@ impl Fixer {
     /// Fixes type annotations in a single source file.
 
     fn fix_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-
         let path = path.as_ref();
 
         if path.extension().and_then(|e| e.to_str()) != Some("py") {
-
             return Ok(());
         }
 
@@ -63,7 +56,6 @@ impl Fixer {
         let fixed = Self::fix_source(&original);
 
         if fixed != original && self.in_place {
-
             fs::write(path, fixed)?;
         }
 
@@ -74,10 +66,8 @@ impl Fixer {
     #[allow(dead_code)]
 
     fn generate_annotation(&self, node: &tree_sitter::Node, source: &[u8]) -> Option<String> {
-
         // For now, use simple heuristics based on variable names and context
         if let Ok(name) = node.utf8_text(source) {
-
             match name {
                 "x" | "y" | "i" | "j" | "k" => Some("int".to_string()),
                 "name" | "text" | "msg" => Some("str".to_string()),
@@ -86,7 +76,6 @@ impl Fixer {
                 _ => Some("Any".to_string()),
             }
         } else {
-
             Some("Any".to_string())
         }
     }
@@ -94,21 +83,16 @@ impl Fixer {
     /// Text-based fixer to add Any annotations.
 
     fn fix_source(source: &str) -> String {
-
         let mut used_any = false;
 
         let mut out = String::with_capacity(source.len() + 64);
 
         for line in source.lines() {
-
             let trimmed = line.trim_start();
 
             if trimmed.starts_with("def ") {
-
                 if let Some(paren_start) = trimmed.find('(') {
-
                     if let Some(paren_end) = trimmed[paren_start..].find(')') {
-
                         let indent_len = line.len() - trimmed.len();
 
                         let before = &trimmed[..paren_start + 1];
@@ -122,9 +106,7 @@ impl Fixer {
                         let mut signature_tail = after_params.to_string();
 
                         if !after_params.contains("->") {
-
                             if let Some(colon_idx) = signature_tail.find(':') {
-
                                 let mut new_tail = String::new();
 
                                 new_tail.push_str(" -> Any");
@@ -167,22 +149,18 @@ impl Fixer {
             && !source.contains("from typing import Any")
             && !out.contains("from typing import Any")
         {
-
             let lines: Vec<&str> = out.lines().collect();
 
             let mut insert_at = 0usize;
 
             if !lines.is_empty() && (lines[0].starts_with("#!") || lines[0].contains("coding")) {
-
                 insert_at = 1;
             }
 
             let mut new_out = String::new();
 
             for (i, l) in lines.iter().enumerate() {
-
                 if i == insert_at {
-
                     new_out.push_str("from typing import Any\n");
                 }
 
@@ -198,17 +176,14 @@ impl Fixer {
     }
 
     fn annotate_params(params: &str, _used_any: &mut bool) -> String {
-
         let mut parts = Vec::new();
 
         for raw in params.split(',') {
-
             let p = raw.to_string();
 
             let trimmed = p.trim();
 
             if trimmed.is_empty() {
-
                 parts.push(p);
 
                 continue;
@@ -221,7 +196,6 @@ impl Fixer {
             let trailing = &p[leading_idx + trimmed.len()..];
 
             if trimmed.starts_with('*') || trimmed.contains(':') {
-
                 parts.push(p);
 
                 continue;
@@ -232,7 +206,6 @@ impl Fixer {
             let mut default = "";
 
             if let Some(eq_idx) = trimmed.find('=') {
-
                 name = trimmed[..eq_idx].trim();
 
                 default = &trimmed[eq_idx..];
@@ -256,7 +229,6 @@ mod tests {
     #[test]
 
     fn test_fixer_initialization() {
-
         let type_env = TypeEnv::new();
 
         let fixer = Fixer::new(type_env, false);

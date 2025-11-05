@@ -20,7 +20,6 @@ impl Parser {
     /// Creates a new parser for Python.
 
     pub fn new() -> Result<Self> {
-
         let mut parser = TSParser::new();
 
         // Get the Python language definition
@@ -36,7 +35,6 @@ impl Parser {
     /// Parses a source file into a syntax tree.
 
     pub fn parse_file(&mut self, path: &Path) -> Result<tree_sitter::Tree> {
-
         let source_code = std::fs::read_to_string(path)
             .map_err(|e| Error::parser_error(format!("Failed to read file: {}", e)))?;
 
@@ -46,7 +44,6 @@ impl Parser {
     /// Parses a source code string into a syntax tree.
 
     pub fn parse_string(&mut self, source: &str) -> Result<tree_sitter::Tree> {
-
         self.parser
             .parse(source, None)
             .ok_or_else(|| Error::parser_error("Failed to parse source code".to_string()))
@@ -62,14 +59,12 @@ mod tests {
     #[test]
 
     fn test_parser_initialization() {
-
         assert!(Parser::new().is_ok());
     }
 
     #[test]
 
     fn test_parse_string() {
-
         let mut parser = Parser::new().unwrap();
 
         let source = r#"
