@@ -1,6 +1,6 @@
 [package]
 name = "omnitype"
-version = "0.1.2"
+version = "0.1.2-beta.1"
 edition = "2021"
 description = "A hybrid type checker for Python and other dynamic languages"
 license = "Apache-2.0"
