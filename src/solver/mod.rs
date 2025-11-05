@@ -130,6 +130,7 @@ impl ConstraintSolver {
 
     /// Handles subtyping relationships.
 
+    #[allow(clippy::only_used_in_recursion)]
     fn subtype(&mut self, t1: Type, t2: Type) -> Result<()> {
         match (t1, t2) {
             (Type::Int, Type::Int) | (Type::Str, Type::Str) | (Type::Bool, Type::Bool) => Ok(()),
@@ -145,6 +146,7 @@ impl ConstraintSolver {
 
     /// Performs the occurs check to prevent infinite types.
 
+    #[allow(clippy::only_used_in_recursion)]
     fn occurs_check(&self, var: TypeVar, ty: &Type) -> Result<bool> {
         match ty {
             Type::Var(v) if *v == var => Ok(true),

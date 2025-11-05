@@ -4,6 +4,7 @@
 //! with support for type inference and automatic type annotation.
 
 #![allow(clippy::empty_line_after_doc_comments)]
+#![allow(clippy::only_used_in_recursion)]
 #![allow(clippy::empty_line_after_outer_attr)]
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]

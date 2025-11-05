@@ -23,3 +23,6 @@ disallowed-names = ["foo", "baz", "quux"]
 # Behavior settings
 avoid-breaking-exported-api = false
 check-private-items = false
+
+# Allowed lints
+allow = ["only_used_in_recursion"]
