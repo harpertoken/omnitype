@@ -132,6 +132,7 @@ impl ConstraintSolver {
 
     #[allow(clippy::only_used_in_recursion)]
     fn subtype(&mut self, t1: Type, t2: Type) -> Result<()> {
+        let _ = self;
         match (t1, t2) {
             (Type::Int, Type::Int) | (Type::Str, Type::Str) | (Type::Bool, Type::Bool) => Ok(()),
             (Type::List(a), Type::List(b)) => self.subtype(*a, *b),
@@ -148,6 +149,7 @@ impl ConstraintSolver {
 
     #[allow(clippy::only_used_in_recursion)]
     fn occurs_check(&self, var: TypeVar, ty: &Type) -> Result<bool> {
+        let _ = self;
         match ty {
             Type::Var(v) if *v == var => Ok(true),
             Type::List(inner) => self.occurs_check(var, inner),
