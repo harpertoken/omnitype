@@ -14,7 +14,7 @@ repos:
         files: \.(c|cc|cxx|cpp|java|js|ts)$
         types: [file]
 
-   - repo: local
+  - repo: local
      hooks:
        - id: cargo-check
          name: cargo check
