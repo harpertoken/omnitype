@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/basebin/omnitype/main/.github/assets/thumbnail.png" alt="omnitype" width="100%">
+</p>
+
 # Omnitype
 
 [![CI](https://github.com/bniladridas/omnitype/workflows/CI/badge.svg)](https://github.com/bniladridas/omnitype/actions)
